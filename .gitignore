@@ -1,3 +1,5 @@
 asl_env/
 __pycache__/
 .vscode/
+dataset/
+asl_env/
