@@ -20,7 +20,7 @@ mp_drawing = mp.solutions.drawing_utils
 hands = mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7)
 
 # Create a folder to save cropped images (if it doesn't exist)
-DEBUG_IMAGE_FOLDER = "real_time_video_test_set/E"
+DEBUG_IMAGE_FOLDER = "real_time_video_test_set/H"
 os.makedirs(DEBUG_IMAGE_FOLDER, exist_ok=True)
 
 # Open the webcam
@@ -57,9 +57,9 @@ while cap.isOpened():
             # Check if the extracted image is valid
             if hand_img.shape[0] > 0 and hand_img.shape[1] > 0:
                 # Save the cropped hand image 
-                timestamp = int(time.time() * 1000)  # Unique timestamp
-                image_path = os.path.join(DEBUG_IMAGE_FOLDER, f"hand_{timestamp}.jpg")
-                cv2.imwrite(image_path, hand_img)
+                #timestamp = int(time.time() * 1000)  # Unique timestamp
+                #image_path = os.path.join(DEBUG_IMAGE_FOLDER, f"hand_{timestamp}.jpg")
+                #cv2.imwrite(image_path, hand_img)
 
                 # Preprocess for prediction
                 hand_img = cv2.resize(hand_img, (64, 64)) / 255.0  # Resize & normalize

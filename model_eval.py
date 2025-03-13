@@ -21,6 +21,12 @@ IMG_SIZE = (64, 64)  # Target image size
 true_labels = []
 predicted_labels = []
 
+def preprocess(img):
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # Convert to RGB
+    img = cv2.resize(img, IMG_SIZE) / 255.0  # Resize & normalize
+    img = np.expand_dims(img, axis=0)  # Add batch dimension
+    return img
+
 # Loop through each category (A-Z, space, nothing, del)
 for class_name in os.listdir(TEST_DIR):
     class_path = os.path.join(TEST_DIR, class_name)
@@ -45,18 +51,28 @@ for class_name in os.listdir(TEST_DIR):
         if hand_img is None:
             print(f"Warning: Unable to read {image_path}. Skipping.")
             continue
-        
-        # Preprocess the image (resize, normalize, expand_dims)
-        hand_img = cv2.resize(hand_img, IMG_SIZE) / 255.0  # Resize & normalize
-        hand_img = np.expand_dims(hand_img, axis=0)  # Add batch dimension
 
-        # Predict the class
-        prediction = model.predict(hand_img)
-        predicted_index = np.argmax(prediction)
+        # Mirror the image horizontally
+        mirrored_img = cv2.flip(hand_img, 1) 
 
-        # Store true & predicted labels
+        # Preprocess both original and mirrored images
+        original_processed = preprocess(hand_img)
+        mirrored_processed = preprocess(mirrored_img)
+
+        # Predict for original image
+        original_pred = model.predict(original_processed)
+        original_pred_index = np.argmax(original_pred)
+
+        # Predict for mirrored image (treated as separate test sample)
+        mirrored_pred = model.predict(mirrored_processed)
+        mirrored_pred_index = np.argmax(mirrored_pred)
+
+        # Store both predictions as separate test samples
         true_labels.append(class_index)
-        predicted_labels.append(predicted_index)
+        predicted_labels.append(original_pred_index)
+
+        true_labels.append(class_index)
+        predicted_labels.append(mirrored_pred_index)
 
 # Compute overall accuracy
 overall_accuracy = accuracy_score(true_labels, predicted_labels)
