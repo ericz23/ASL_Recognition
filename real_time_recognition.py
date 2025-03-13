@@ -56,7 +56,7 @@ while cap.isOpened():
 
             # Check if the extracted image is valid
             if hand_img.shape[0] > 0 and hand_img.shape[1] > 0:
-                # Save the cropped hand image for debugging
+                # Save the cropped hand image 
                 timestamp = int(time.time() * 1000)  # Unique timestamp
                 image_path = os.path.join(DEBUG_IMAGE_FOLDER, f"hand_{timestamp}.jpg")
                 cv2.imwrite(image_path, hand_img)
