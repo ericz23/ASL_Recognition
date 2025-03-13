@@ -20,13 +20,13 @@ mp_drawing = mp.solutions.drawing_utils
 hands = mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7)
 
 # Create a folder to save cropped images (if it doesn't exist)
-DEBUG_IMAGE_FOLDER = "debug_real_time_images"
+DEBUG_IMAGE_FOLDER = "real_time_video_test_set/E"
 os.makedirs(DEBUG_IMAGE_FOLDER, exist_ok=True)
 
 # Open the webcam
 cap = cv2.VideoCapture(0)
 
-MARGIN = 60  # Add padding to ensure the full hand is captured
+MARGIN = 80  # Add padding to ensure the full hand is captured
 
 while cap.isOpened():
     ret, frame = cap.read()
