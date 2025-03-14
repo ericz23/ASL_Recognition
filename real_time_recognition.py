@@ -5,6 +5,7 @@ import numpy as np
 import json
 import os
 import time  # For unique filenames
+from preprocessing_utils import preprocess_image
 
 # Load trained ASL model
 model = tf.keras.models.load_model("asl_model.h5")
@@ -42,40 +43,43 @@ while cap.isOpened():
 
     if results.multi_hand_landmarks:
         for hand_landmarks in results.multi_hand_landmarks:
-            # Get image dimensions
-            h, w, c = frame.shape
-
-            # Get bounding box coordinates
-            x_min = max(0, int(min([lm.x for lm in hand_landmarks.landmark]) * w) - MARGIN)
-            y_min = max(0, int(min([lm.y for lm in hand_landmarks.landmark]) * h) - MARGIN)
-            x_max = min(w, int(max([lm.x for lm in hand_landmarks.landmark]) * w) + MARGIN)
-            y_max = min(h, int(max([lm.y for lm in hand_landmarks.landmark]) * h) + MARGIN)
-
-            # Extract hand region
-            hand_img = frame[y_min:y_max, x_min:x_max]
-
-            # Check if the extracted image is valid
-            if hand_img.shape[0] > 0 and hand_img.shape[1] > 0:
-                # Save the cropped hand image 
-                timestamp = int(time.time() * 1000)  # Unique timestamp
-                image_path = os.path.join(DEBUG_IMAGE_FOLDER, f"hand_{timestamp}.jpg")
-                cv2.imwrite(image_path, hand_img)
-
-                # Preprocess for prediction
-                hand_img = cv2.resize(hand_img, (64, 64)) / 255.0  # Resize & normalize
-                hand_img = np.expand_dims(hand_img, axis=0)  # Add batch dimension
-
-                # Predict the ASL sign
-                prediction = model.predict(hand_img)
-                predicted_index = np.argmax(prediction)
-                predicted_label = class_labels.get(predicted_index, "Unknown")
-
-                # Display detected sign on the frame
-                cv2.putText(frame, f"Predicted: {predicted_label}", (50, 50),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-
             # Draw hand landmarks
             mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+            
+            # Get bounding box of hand
+            h, w, c = frame.shape
+            x_min, x_max, y_min, y_max = w, 0, h, 0
+            
+            for landmark in hand_landmarks.landmark:
+                x, y = int(landmark.x * w), int(landmark.y * h)
+                x_min = min(x_min, x)
+                x_max = max(x_max, x)
+                y_min = min(y_min, y)
+                y_max = max(y_max, y)
+            
+            # Add margin
+            x_min = max(0, x_min - MARGIN)
+            x_max = min(w, x_max + MARGIN)
+            y_min = max(0, y_min - MARGIN)
+            y_max = min(h, y_max + MARGIN)
+            
+            # Crop hand region
+            hand_img = frame[y_min:y_max, x_min:x_max].copy()
+            
+            if hand_img.size != 0:  # Check if the crop is valid
+                # Use our robust preprocessing function (without augmentation for inference)
+                processed_img = preprocess_image(hand_img, augment=False, target_size=(64, 64))
+                processed_img = np.expand_dims(processed_img, axis=0)  # Add batch dimension
+                
+                # Make prediction
+                prediction = model.predict(processed_img)
+                predicted_class_idx = np.argmax(prediction[0])
+                predicted_letter = class_labels[predicted_class_idx]
+                confidence = prediction[0][predicted_class_idx]
+                
+                # Display detected sign on the frame
+                cv2.putText(frame, f"Predicted: {predicted_letter} (Confidence: {confidence:.2f})", (50, 50),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
     # Show the webcam feed
     cv2.imshow("ASL Real-Time Recognition", frame)
