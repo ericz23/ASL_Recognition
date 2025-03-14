@@ -20,7 +20,7 @@ mp_drawing = mp.solutions.drawing_utils
 hands = mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7)
 
 # Create a folder to save cropped images (if it doesn't exist)
-DEBUG_IMAGE_FOLDER = "real_time_video_test_set/O"
+DEBUG_IMAGE_FOLDER = "real_time_video_test_set/del"
 os.makedirs(DEBUG_IMAGE_FOLDER, exist_ok=True)
 
 # Open the webcam
