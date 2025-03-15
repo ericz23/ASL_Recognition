@@ -17,7 +17,7 @@ FINETUNED_MODEL_PATH = "asl_model_finetuned_final.h5"
 IMG_SIZE = (64, 64)
 
 # Load class labels
-with open("class_labels.json", "r") as f:
+with open("finetune_class_indices.json", "r") as f:
     class_indices = json.load(f)
 class_labels = {v: k for k, v in class_indices.items()}
 
