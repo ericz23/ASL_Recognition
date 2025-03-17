@@ -1,13 +1,65 @@
+import os
+import sys 
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"  # Suppress TensorFlow INFO & WARNING logs
+os.environ["GLOG_minloglevel"] = "3"  # Suppress MediaPipe & OpenGL INFO logs
+os.environ["MEDIAPIPE_DISABLE_GPU"] = "1"  # Prevent GPU logging in MediaPipe
+sys.stderr = open(os.devnull, "w")
 import cv2
 import numpy as np
 import tensorflow as tf
 import random
+import time
+import mediapipe as mp
+
+cv2.ocl.setUseOpenCL(False) 
+
+# Initialize MediaPipe Hands
+mp_hands = mp.solutions.hands
+
+def extract_hand(image):
+
+    with mp_hands.Hands(
+    static_image_mode=True,
+    max_num_hands=1,
+    min_detection_confidence=0.5) as hands:
+
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        results = hands.process(image_rgb)
+
+        if results.multi_hand_landmarks:
+            for hand_landmarks in results.multi_hand_landmarks:
+                x_min = min([lm.x for lm in hand_landmarks.landmark]) * image.shape[1]
+                x_max = max([lm.x for lm in hand_landmarks.landmark]) * image.shape[1]
+                y_min = min([lm.y for lm in hand_landmarks.landmark]) * image.shape[0]
+                y_max = max([lm.y for lm in hand_landmarks.landmark]) * image.shape[0]
+
+                # Add padding to ensure the full hand is captured
+                margin = 80
+                x_min = max(0, int(x_min - margin))
+                x_max = min(image.shape[1], int(x_max + margin))
+                y_min = max(0, int(y_min - margin))
+                y_max = min(image.shape[0], int(y_max + margin))
+
+                # Extract the hand region
+                hand_image = image[y_min:y_max, x_min:x_max]
+
+                return hand_image
+
+    return None  # No hand detected
+
+
 
 def preprocess_image(image, augment=False, target_size=(64, 64)):
     """Simplified preprocessing without YCrCb conversion"""
     # Check if image is None
     if image is None:
         raise ValueError("Input image is None")
+
+    hand_image = extract_hand(image)
+    if hand_image is None:  # If no hand detected, use original image
+        hand_image = image
+    
+    image = hand_image
         
     # Convert to RGB if needed
     if len(image.shape) == 2 or image.shape[2] == 1:

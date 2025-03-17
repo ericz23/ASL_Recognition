@@ -65,15 +65,17 @@ base_layers = baseline_model.layers[:-1]
 # Build a new model
 finetuned_model = tf.keras.Sequential()
 
-# Add all layers except the output layer
+# Add all layers 
 for layer in base_layers:
     finetuned_model.add(layer)
     layer.trainable = False  # Freeze the layer
+
+#for layer in base_layers[-5:]:  # Unfreeze last 5 layers for fine-tuning
+    #layer.trainable = True
     
 # Add a new output layer with the correct number of classes
 finetuned_model.add(tf.keras.layers.Dense(len(available_classes), activation='softmax', name='fine_tuned_output'))
 
-# Compile the model with a lower learning rate
 finetuned_model.compile(
     optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE),
     loss="categorical_crossentropy",

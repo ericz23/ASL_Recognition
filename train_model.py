@@ -1,6 +1,11 @@
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import os
+import sys
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"  # Suppress TensorFlow INFO & WARNING logs
+os.environ["GLOG_minloglevel"] = "3"  # Suppress MediaPipe & OpenGL INFO logs
+os.environ["MEDIAPIPE_DISABLE_GPU"] = "1"  # Prevent GPU logging in MediaPipe
+sys.stderr = open(os.devnull, "w")
 from preprocessing_utils import preprocess_image
 from tensorflow.keras.preprocessing.image import img_to_array, load_img
 from tensorflow.keras.utils import to_categorical
@@ -8,53 +13,14 @@ import numpy as np
 import random
 import cv2
 
+cv2.ocl.setUseOpenCL(False) 
+
 # Define dataset path
 DATASET_PATH = "dataset/asl_alphabet_train/asl_alphabet_train"
 IMG_SIZE = (64, 64)  # Resize images
 BATCH_SIZE = 32
 EPOCHS = 10  # Increase for better accuracy
-
-# Data Augmentation
-train_datagen = ImageDataGenerator(
-    rescale=1.0 / 255,
-    rotation_range=20,  # Random rotations up to 20 degrees
-    width_shift_range=0.2,  # Random horizontal shifts
-    height_shift_range=0.2,  # Random vertical shifts
-    shear_range=0.2,  # Shear transformations
-    zoom_range=0.2,  # Random zoom
-    horizontal_flip=True,  # Mirror images horizontally
-    brightness_range=(0.7, 1.3),  # Vary brightness
-    fill_mode='nearest',  # Fill strategy for created pixels
-    validation_split=0.2  # 80% train, 20% validation
-)
-
-# Validation data should only be rescaled, not augmented
-val_datagen = ImageDataGenerator(
-    rescale=1.0 / 255,
-    validation_split=0.2
-)
-
-# For training, use augmentation
-train_generator = train_datagen.flow_from_directory(
-    DATASET_PATH,
-    target_size=IMG_SIZE,
-    batch_size=BATCH_SIZE,
-    color_mode="rgb",
-    class_mode="categorical",
-    subset="training"
-)
-
-# For validation, use the separate validation generator
-val_generator = val_datagen.flow_from_directory(
-    DATASET_PATH,
-    target_size=IMG_SIZE,
-    batch_size=BATCH_SIZE,
-    color_mode="rgb",
-    class_mode="categorical",
-    subset="validation"
-)
-
-NUM_CLASSES = len(train_generator.class_indices)
+NUM_CLASSES = 29
 
 # Define CNN Model
 model = tf.keras.models.Sequential([
@@ -64,7 +30,7 @@ model = tf.keras.models.Sequential([
     tf.keras.layers.MaxPooling2D(2, 2),
     tf.keras.layers.Flatten(),
     tf.keras.layers.Dense(128, activation='relu'),
-    tf.keras.layers.Dense(NUM_CLASSES, activation='softmax')  # 26 letters A-Z
+    tf.keras.layers.Dense(NUM_CLASSES, activation='softmax') 
 ])
 
 # Compile the Model
@@ -169,5 +135,5 @@ model.fit(
 )
 
 # Save the Model
-model.save("asl_model.h5")
-print("Model saved as asl_model.h5")
+model.save("asl_model_mp_hands.h5")
+print("Model saved as asl_model_mp_hands.h5")
